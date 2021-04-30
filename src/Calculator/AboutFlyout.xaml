@@ -4,7 +4,6 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="using:CalculatorApp.Common"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             Loaded="UserControl_Loaded"
              mc:Ignorable="d">
     <UserControl.Transitions>
         <TransitionCollection>
@@ -13,6 +12,7 @@
     </UserControl.Transitions>
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -73,5 +73,21 @@
                     Click="FeedbackButton_Click"/>
 
         </StackPanel>
+        <RichTextBlock x:Name="AboutFlyoutContribute"
+                       Grid.Row="2"
+                       Grid.ColumnSpan="2"
+                       Margin="12,18,12,6"
+                       HorizontalAlignment="Left"
+                       Foreground="{ThemeResource SystemControlPageTextBaseHighBrush}"
+                       FontSize="{ThemeResource BodyFontSize}"
+                       TextWrapping="Wrap">
+            <Paragraph>
+                <Run x:Name="ContributeRunBeforeLink"/><Hyperlink NavigateUri="https://go.microsoft.com/fwlink/?linkid=2099939"
+                           TextDecorations="None"
+                           ToolTipService.ToolTip="https://go.microsoft.com/fwlink/?linkid=2099939">
+                    <Run x:Name="ContributeRunLink"/>
+                </Hyperlink><Run x:Name="ContributeRunAfterLink"/>
+            </Paragraph>
+        </RichTextBlock>
     </Grid>
 </UserControl>

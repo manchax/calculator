@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
 #include "pch.h"
@@ -45,7 +45,7 @@ constexpr unsigned int TIMER_INTERVAL_IN_MS = 10000;
 
 const TimeSpan SUPPLEMENTARY_VALUES_INTERVAL = { 10 * TIMER_INTERVAL_IN_MS };
 
-static Unit^ EMPTY_UNIT = ref new Unit(UCM::EMPTY_UNIT);
+static Unit ^ EMPTY_UNIT = ref new Unit(UCM::EMPTY_UNIT);
 
 constexpr size_t UNIT_LIST = 0;
 constexpr size_t SELECTED_SOURCE_UNIT = 1;
@@ -89,65 +89,64 @@ namespace CalculatorApp::ViewModel::UnitConverterResourceKeys
     StringReference CurrencyRatesUpdateFailed(L"CurrencyRatesUpdateFailed");
 }
 
-UnitConverterViewModel::UnitConverterViewModel(const shared_ptr<UCM::IUnitConverter>& model) :
-    m_model(model),
-    m_resettingTimer(false),
-    m_value1cp(ConversionParameter::Source),
-    m_Value1Active(true),
-    m_Value2Active(false),
-    m_Value1("0"),
-    m_Value2("0"),
-    m_valueToUnlocalized(L"0"),
-    m_valueFromUnlocalized(L"0"),
-    m_relocalizeStringOnSwitch(false),
-    m_Categories(ref new Vector<Category^>()),
-    m_Units(ref new Vector<Unit^>()),
-    m_SupplementaryResults(ref new Vector<SupplementaryResult^>),
-    m_IsDropDownOpen(false),
-    m_IsDropDownEnabled(true),
-    m_IsCurrencyLoadingVisible(false),
-    m_isCurrencyDataLoaded(false),
-    m_lastAnnouncedFrom(L""),
-    m_lastAnnouncedTo(L""),
-    m_lastAnnouncedConversionResult(L""),
-    m_isValue1Updating(false),
-    m_isValue2Updating(false),
-    m_Announcement(nullptr),
-    m_Mode(ViewMode::None),
-    m_CurrencySymbol1(L""),
-    m_CurrencySymbol2(L""),
-    m_IsCurrencyCurrentCategory(false),
-    m_CurrencyRatioEquality(L""),
-    m_CurrencyRatioEqualityAutomationName(L""),
-    m_isInputBlocked(false),
-    m_CurrencyDataLoadFailed(false)
+UnitConverterViewModel::UnitConverterViewModel(const shared_ptr<UCM::IUnitConverter>& model)
+    : m_model(model)
+    , m_resettingTimer(false)
+    , m_value1cp(ConversionParameter::Source)
+    , m_Value1Active(true)
+    , m_Value2Active(false)
+    , m_Value1("0")
+    , m_Value2("0")
+    , m_valueToUnlocalized(L"0")
+    , m_valueFromUnlocalized(L"0")
+    , m_relocalizeStringOnSwitch(false)
+    , m_Categories(ref new Vector<Category ^>())
+    , m_Units(ref new Vector<Unit ^>())
+    , m_SupplementaryResults(ref new Vector<SupplementaryResult ^>)
+    , m_IsDropDownOpen(false)
+    , m_IsDropDownEnabled(true)
+    , m_IsCurrencyLoadingVisible(false)
+    , m_isCurrencyDataLoaded(false)
+    , m_lastAnnouncedFrom(L"")
+    , m_lastAnnouncedTo(L"")
+    , m_lastAnnouncedConversionResult(L"")
+    , m_isValue1Updating(false)
+    , m_isValue2Updating(false)
+    , m_Announcement(nullptr)
+    , m_Mode(ViewMode::None)
+    , m_CurrencySymbol1(L"")
+    , m_CurrencySymbol2(L"")
+    , m_IsCurrencyCurrentCategory(false)
+    , m_CurrencyRatioEquality(L"")
+    , m_CurrencyRatioEqualityAutomationName(L"")
+    , m_isInputBlocked(false)
+    , m_CurrencyDataLoadFailed(false)
 {
+    auto localizationService = LocalizationService::GetInstance();
     m_model->SetViewModelCallback(make_shared<UnitConverterVMCallback>(this));
     m_model->SetViewModelCurrencyCallback(make_shared<ViewModelCurrencyCallback>(this));
-    m_decimalFormatter = LocalizationService::GetRegionalSettingsAwareDecimalFormatter();
+    m_decimalFormatter = localizationService->GetRegionalSettingsAwareDecimalFormatter();
     m_decimalFormatter->FractionDigits = 0;
     m_decimalFormatter->IsGrouped = true;
     m_decimalSeparator = LocalizationSettings::GetInstance().GetDecimalSeparator();
 
-    m_currencyFormatter = LocalizationService::GetRegionalSettingsAwareCurrencyFormatter();
+    m_currencyFormatter = localizationService->GetRegionalSettingsAwareCurrencyFormatter();
     m_currencyFormatter->IsGrouped = true;
     m_currencyFormatter->Mode = CurrencyFormatterMode::UseCurrencyCode;
     m_currencyFormatter->ApplyRoundingForCurrency(RoundingAlgorithm::RoundHalfDown);
-    m_currencyMaxFractionDigits = m_currencyFormatter->FractionDigits;
 
     auto resourceLoader = AppResourceProvider::GetInstance();
-    m_localizedValueFromFormat = resourceLoader.GetResourceString(UnitConverterResourceKeys::ValueFromFormat);
-    m_localizedValueToFormat = resourceLoader.GetResourceString(UnitConverterResourceKeys::ValueToFormat);
-    m_localizedConversionResultFormat = resourceLoader.GetResourceString(UnitConverterResourceKeys::ConversionResultFormat);
-    m_localizedValueFromDecimalFormat = resourceLoader.GetResourceString(UnitConverterResourceKeys::ValueFromDecimalFormat);
-    m_localizedInputUnitName = resourceLoader.GetResourceString(UnitConverterResourceKeys::InputUnit_Name);
-    m_localizedOutputUnitName = resourceLoader.GetResourceString(UnitConverterResourceKeys::OutputUnit_Name);
+    m_localizedValueFromFormat = resourceLoader->GetResourceString(UnitConverterResourceKeys::ValueFromFormat);
+    m_localizedValueToFormat = resourceLoader->GetResourceString(UnitConverterResourceKeys::ValueToFormat);
+    m_localizedConversionResultFormat = resourceLoader->GetResourceString(UnitConverterResourceKeys::ConversionResultFormat);
+    m_localizedValueFromDecimalFormat = resourceLoader->GetResourceString(UnitConverterResourceKeys::ValueFromDecimalFormat);
+    m_localizedInputUnitName = resourceLoader->GetResourceString(UnitConverterResourceKeys::InputUnit_Name);
+    m_localizedOutputUnitName = resourceLoader->GetResourceString(UnitConverterResourceKeys::OutputUnit_Name);
 
     Unit1AutomationName = m_localizedInputUnitName;
     Unit2AutomationName = m_localizedOutputUnitName;
     IsDecimalEnabled = true;
 
-    m_IsFirstTime = true;
     m_model->Initialize();
     PopulateData();
 }
@@ -155,7 +154,6 @@ UnitConverterViewModel::UnitConverterViewModel(const shared_ptr<UCM::IUnitConver
 void UnitConverterViewModel::ResetView()
 {
     m_model->SendCommand(UCM::Command::Reset);
-    m_IsFirstTime = true;
     OnCategoryChanged(nullptr);
 }
 
@@ -164,13 +162,14 @@ void UnitConverterViewModel::PopulateData()
     InitializeView();
 }
 
-void UnitConverterViewModel::OnCategoryChanged(Object^ parameter)
+void UnitConverterViewModel::OnCategoryChanged(Object ^ parameter)
 {
-    UCM::Category currentCategory = CurrentCategory->GetModelCategory();
-    IsCurrencyCurrentCategory = currentCategory.id == NavCategory::Serialize(ViewMode::Currency);
-
     m_model->SendCommand(UCM::Command::Clear);
+    ResetCategory();
+}
 
+void UnitConverterViewModel::ResetCategory()
+{
     m_isInputBlocked = false;
     SetSelectedUnits();
 
@@ -206,9 +205,9 @@ void UnitConverterViewModel::BuildUnitList(const vector<UCM::Unit>& modelUnitLis
     }
 }
 
-Unit^ UnitConverterViewModel::FindUnitInList(UCM::Unit target)
+Unit ^ UnitConverterViewModel::FindUnitInList(UCM::Unit target)
 {
-    for (Unit^ vmUnit : m_Units)
+    for (Unit ^ vmUnit : m_Units)
     {
         UCM::Unit modelUnit = vmUnit->GetModelUnit();
         if (modelUnit.id == target.id)
@@ -220,7 +219,7 @@ Unit^ UnitConverterViewModel::FindUnitInList(UCM::Unit target)
     return EMPTY_UNIT;
 }
 
-void UnitConverterViewModel::OnUnitChanged(Object^ parameter)
+void UnitConverterViewModel::OnUnitChanged(Object ^ parameter)
 {
     if ((m_Unit1 == nullptr) || (m_Unit2 == nullptr))
     {
@@ -228,24 +227,19 @@ void UnitConverterViewModel::OnUnitChanged(Object^ parameter)
         return;
     }
 
+    UpdateCurrencyFormatter();
     m_model->SetCurrentUnitTypes(UnitFrom->GetModelUnit(), UnitTo->GetModelUnit());
+
     if (m_supplementaryResultsTimer != nullptr)
     {
         // End timer to show results immediately
         m_supplementaryResultsTimer->Cancel();
     }
-    if (!m_IsFirstTime)
-    {
-        SaveUserPreferences();
-    }
-    else
-    {
-        RestoreUserPreferences();
-        m_IsFirstTime = false;
-    }
+
+    SaveUserPreferences();
 }
 
-void UnitConverterViewModel::OnSwitchActive(Platform::Object^ unused)
+void UnitConverterViewModel::OnSwitchActive(Platform::Object ^ unused)
 {
     // this can be false if this switch occurs without the user having explicitly updated any strings
     // (for example, during deserialization). We only want to try this cleanup if there's actually
@@ -253,7 +247,7 @@ void UnitConverterViewModel::OnSwitchActive(Platform::Object^ unused)
     if (m_relocalizeStringOnSwitch)
     {
         // clean up any ill-formed strings that were in progress before the switch
-        ValueFrom = ConvertToLocalizedString(m_valueFromUnlocalized, false);
+        ValueFrom = ConvertToLocalizedString(m_valueFromUnlocalized, false, CurrencyFormatterParameterFrom);
     }
 
     SwitchConversionParameters();
@@ -268,29 +262,54 @@ void UnitConverterViewModel::OnSwitchActive(Platform::Object^ unused)
     }
 
     m_valueFromUnlocalized.swap(m_valueToUnlocalized);
-    Utils::Swap(&m_localizedValueFromFormat, &m_localizedValueToFormat);
+    swap(m_localizedValueFromFormat, m_localizedValueToFormat);
 
-    Utils::Swap(&m_Unit1AutomationName, &m_Unit2AutomationName);
+    swap(m_Unit1AutomationName, m_Unit2AutomationName);
     RaisePropertyChanged(Unit1AutomationNamePropertyName);
     RaisePropertyChanged(Unit2AutomationNamePropertyName);
 
     m_isInputBlocked = false;
     m_model->SwitchActive(m_valueFromUnlocalized);
+
+    UpdateIsDecimalEnabled();
 }
 
-String^ UnitConverterViewModel::ConvertToLocalizedString(const std::wstring& stringToLocalize, bool allowPartialStrings)
+String ^ UnitConverterViewModel::ConvertToLocalizedString(const std::wstring& stringToLocalize, bool allowPartialStrings, CurrencyFormatterParameter cfp)
 {
-    Platform::String^ result;
+    Platform::String ^ result;
 
     if (stringToLocalize.empty())
     {
         return result;
     }
 
+    CurrencyFormatter ^ currencyFormatter;
+
+    switch (cfp)
+    {
+    case CurrencyFormatterParameter::ForValue1:
+        currencyFormatter = m_currencyFormatter1;
+        break;
+    case CurrencyFormatterParameter::ForValue2:
+        currencyFormatter = m_currencyFormatter2;
+        break;
+    default:
+        currencyFormatter = m_currencyFormatter;
+        break;
+    }
+
+    // If unit hasn't been set, currencyFormatter1/2 is nullptr. Fallback to default.
+    if (currencyFormatter == nullptr)
+    {
+        currencyFormatter = m_currencyFormatter;
+    }
+
+    int lastCurrencyFractionDigits = currencyFormatter->FractionDigits;
+
     m_decimalFormatter->IsDecimalPointAlwaysDisplayed = false;
     m_decimalFormatter->FractionDigits = 0;
-    m_currencyFormatter->IsDecimalPointAlwaysDisplayed = false;
-    m_currencyFormatter->FractionDigits = 0;
+    currencyFormatter->IsDecimalPointAlwaysDisplayed = false;
+    currencyFormatter->FractionDigits = 0;
 
     wstring::size_type posOfE = stringToLocalize.find(L'e');
     if (posOfE != wstring::npos)
@@ -300,7 +319,8 @@ String^ UnitConverterViewModel::ConvertToLocalizedString(const std::wstring& str
         std::wstring significandStr(stringToLocalize.substr(0, posOfE));
         std::wstring exponentStr(stringToLocalize.substr(posOfSign + 1, stringToLocalize.length() - posOfSign));
 
-        result += ConvertToLocalizedString(significandStr, allowPartialStrings) + "e" + signOfE + ConvertToLocalizedString(exponentStr, allowPartialStrings);
+        result += ConvertToLocalizedString(significandStr, allowPartialStrings, cfp) + "e" + signOfE
+                  + ConvertToLocalizedString(exponentStr, allowPartialStrings, cfp);
     }
     else
     {
@@ -311,7 +331,7 @@ String^ UnitConverterViewModel::ConvertToLocalizedString(const std::wstring& str
 
         if (hasDecimal)
         {
-            if (allowPartialStrings)
+            if (allowPartialStrings && lastCurrencyFractionDigits > 0)
             {
                 // allow "in progress" strings, like "3." that occur during the composition of
                 // a final number. Without this, when typing the three characters in "3.2"
@@ -319,18 +339,18 @@ String^ UnitConverterViewModel::ConvertToLocalizedString(const std::wstring& str
                 // typed a post-decimal digit.
 
                 m_decimalFormatter->IsDecimalPointAlwaysDisplayed = true;
-                m_currencyFormatter->IsDecimalPointAlwaysDisplayed = true;
+                currencyFormatter->IsDecimalPointAlwaysDisplayed = true;
             }
 
             // force post-decimal digits so that trailing zeroes entered by the user aren't suddenly cut off.
             m_decimalFormatter->FractionDigits = static_cast<int>(stringToLocalize.length() - (posOfDecimal + 1));
-            m_currencyFormatter->FractionDigits = m_currencyMaxFractionDigits;
+            currencyFormatter->FractionDigits = lastCurrencyFractionDigits;
         }
 
         if (IsCurrencyCurrentCategory)
         {
-            wstring currencyResult = m_currencyFormatter->Format(stod(stringToLocalize))->Data();
-            wstring currencyCode = m_currencyFormatter->Currency->Data();
+            wstring currencyResult = currencyFormatter->Format(stod(stringToLocalize))->Data();
+            wstring currencyCode = currencyFormatter->Currency->Data();
 
             // CurrencyFormatter always includes LangCode or Symbol. Make it include LangCode
             // because this includes a non-breaking space. Remove the LangCode.
@@ -364,7 +384,7 @@ String^ UnitConverterViewModel::ConvertToLocalizedString(const std::wstring& str
             // Since the output from GetLocaleInfoEx() and DecimalFormatter are differing for decimal string
             // we are adding the below work-around of editing the string returned by DecimalFormatter
             // and replacing the decimal separator with the one returned by GetLocaleInfoEx()
-            String^ formattedSampleString = m_decimalFormatter->Format(stod("1.1"));
+            String ^ formattedSampleString = m_decimalFormatter->Format(stod("1.1"));
             wstring formattedSampleWString = wstring(formattedSampleString->Data());
 
             wstring resultWithDecimal = wstring(result->Data());
@@ -388,13 +408,16 @@ String^ UnitConverterViewModel::ConvertToLocalizedString(const std::wstring& str
         }
         result = L"-" + result;
     }
-    result = Utils::LRE + result + Utils::PDF;
+
+    // restore the original fraction digits
+    currencyFormatter->FractionDigits = lastCurrencyFractionDigits;
+
     return result;
 }
 
 void UnitConverterViewModel::DisplayPasteError()
 {
-    String^ errorMsg = AppResourceProvider::GetInstance().GetCEngineString(SIDS_DOMAIN); /*SIDS_DOMAIN is for "invalid input"*/
+    String ^ errorMsg = AppResourceProvider::GetInstance()->GetCEngineString(StringReference(SIDS_DOMAIN)); /*SIDS_DOMAIN is for "invalid input"*/
     Value1 = errorMsg;
     Value2 = errorMsg;
     m_relocalizeStringOnSwitch = false;
@@ -402,9 +425,9 @@ void UnitConverterViewModel::DisplayPasteError()
 
 void UnitConverterViewModel::UpdateDisplay(const wstring& from, const wstring& to)
 {
-    String^ fromStr = this->ConvertToLocalizedString(from, true);
+    String ^ fromStr = this->ConvertToLocalizedString(from, true, CurrencyFormatterParameterFrom);
     UpdateInputBlocked(from);
-    String^ toStr = this->ConvertToLocalizedString(to, true);
+    String ^ toStr = this->ConvertToLocalizedString(to, true, CurrencyFormatterParameterTo);
 
     bool updatedValueFrom = ValueFrom != fromStr;
     bool updatedValueTo = ValueTo != toStr;
@@ -464,12 +487,12 @@ void UnitConverterViewModel::UpdateSupplementaryResults(const std::vector<std::t
         ref new TimerDestroyedHandler(this, &UnitConverterViewModel::SupplementaryResultsTimerCancel, TIMER_CALLBACK_CONTEXT));
 }
 
-void UnitConverterViewModel::OnValueActivated(IActivatable^ control)
+void UnitConverterViewModel::OnValueActivated(IActivatable ^ control)
 {
     control->IsActive = true;
 }
 
-void UnitConverterViewModel::OnButtonPressed(Platform::Object^ parameter)
+void UnitConverterViewModel::OnButtonPressed(Platform::Object ^ parameter)
 {
     NumbersAndOperatorsEnum numOpEnum = CalculatorButtonPressedEventArgs::GetOperationFromCommandParameter(parameter);
     UCM::Command command = CommandFromButtonId(numOpEnum);
@@ -480,43 +503,27 @@ void UnitConverterViewModel::OnButtonPressed(Platform::Object^ parameter)
         return;
     }
 
-    static const vector<UCM::Command> OPERANDS = {
-        UCM::Command::Zero,
-        UCM::Command::One,
-        UCM::Command::Two,
-        UCM::Command::Three,
-        UCM::Command::Four,
-        UCM::Command::Five,
-        UCM::Command::Six,
-        UCM::Command::Seven,
-        UCM::Command::Eight,
-        UCM::Command::Nine
-    };
+    static constexpr UCM::Command OPERANDS[] = { UCM::Command::Zero, UCM::Command::One, UCM::Command::Two,   UCM::Command::Three, UCM::Command::Four,
+                                                 UCM::Command::Five, UCM::Command::Six, UCM::Command::Seven, UCM::Command::Eight, UCM::Command::Nine };
 
-    if (find(begin(OPERANDS), end(OPERANDS), command) != OPERANDS.end())
+    // input should be allowed if user just switches active, because we will clear values in such cases
+    if (m_isInputBlocked && !m_model->IsSwitchedActive() && command != UCM::Command::Clear && command != UCM::Command::Backspace)
     {
-        if (m_isInputBlocked)
-        {
-            return;
-        }
-
-        if (m_IsCurrencyCurrentCategory)
-        {
-            StartConversionResultTimer();
-        }
+        return;
     }
-
     m_model->SendCommand(command);
+
+    TraceLogger::GetInstance()->LogConverterInputReceived(Mode);
 }
 
-void UnitConverterViewModel::OnCopyCommand(Platform::Object^ parameter)
+void UnitConverterViewModel::OnCopyCommand(Platform::Object ^ parameter)
 {
-    //EventWriteClipboardCopy_Start();
+    // EventWriteClipboardCopy_Start();
     CopyPasteManager::CopyToClipboard(ref new Platform::String(m_valueFromUnlocalized.c_str()));
-    //EventWriteClipboardCopy_Stop();
+    // EventWriteClipboardCopy_Stop();
 }
 
-void UnitConverterViewModel::OnPasteCommand(Platform::Object^ parameter)
+void UnitConverterViewModel::OnPasteCommand(Platform::Object ^ parameter)
 {
     // if there's nothing to copy early out
     if (!CopyPasteManager::HasStringToPaste())
@@ -525,13 +532,12 @@ void UnitConverterViewModel::OnPasteCommand(Platform::Object^ parameter)
     }
 
     // Ensure that the paste happens on the UI thread
-    //EventWriteClipboardPaste_Start();
+    // EventWriteClipboardPaste_Start();
     // Any converter ViewMode is fine here.
-    CopyPasteManager::GetStringToPaste(m_Mode, NavCategory::GetGroupType(m_Mode)).then(
-        [this](String^ pastedString)
-    {
-        OnPaste(pastedString, m_Mode);
-    }, concurrency::task_continuation_context::use_current());
+
+    auto that(this);
+    create_task(CopyPasteManager::GetStringToPaste(m_Mode, NavCategory::GetGroupType(m_Mode), NumberBase::Unknown, BitLength::BitLengthUnknown))
+        .then([that](String ^ pastedString) { that->OnPaste(pastedString); }, concurrency::task_continuation_context::use_current());
 }
 
 void UnitConverterViewModel::InitializeView()
@@ -539,7 +545,7 @@ void UnitConverterViewModel::InitializeView()
     vector<UCM::Category> categories = m_model->GetCategories();
     for (UINT i = 0; i < categories.size(); i++)
     {
-        Category^ category = ref new Category(categories[i]);
+        Category ^ category = ref new Category(categories[i]);
         m_Categories->Append(category);
     }
 
@@ -547,7 +553,7 @@ void UnitConverterViewModel::InitializeView()
     CurrentCategory = ref new Category(m_model->GetCurrentCategory());
 }
 
-void UnitConverterViewModel::OnPropertyChanged(Platform::String^ prop)
+void UnitConverterViewModel::OnPropertyChanged(Platform::String ^ prop)
 {
     static bool isCategoryChanging = false;
 
@@ -621,58 +627,12 @@ void UnitConverterViewModel::OnPropertyChanged(Platform::String^ prop)
     }
 }
 
-String^ UnitConverterViewModel::Serialize()
-{
-    wstringstream out(wstringstream::out);
-    const wchar_t * delimiter = L"[;;;]";
-    out << std::to_wstring(m_resettingTimer) << delimiter;
-    out << std::to_wstring(static_cast<int>(m_value1cp)) << delimiter;
-    out << m_Value1Active << delimiter << m_Value2Active << delimiter;
-    out << m_Value1->Data() << delimiter << m_Value2->Data() << delimiter;
-    out << m_valueFromUnlocalized << delimiter << m_valueToUnlocalized << delimiter << L"[###]";
-    wstring unitConverterSerializedData = m_model->Serialize();
-
-    if (!unitConverterSerializedData.empty())
-    {
-        out << m_model->Serialize() << L"[###]";
-        String^ serializedData = ref new String(wstring(out.str()).c_str());
-        return serializedData;
-    }
-
-    return nullptr;
-}
-
-void UnitConverterViewModel::Deserialize(Platform::String^ state)
-{
-    wstring serializedData = wstring(state->Data());
-    vector<wstring> tokens = UCM::UnitConverter::StringToVector(serializedData, L"[###]");
-    assert(tokens.size() >= 2);
-    vector<wstring> viewModelData = UCM::UnitConverter::StringToVector(tokens[0], L"[;;;]");
-    assert(viewModelData.size() == EXPECTEDVIEWMODELDATATOKENS);
-    m_resettingTimer = (viewModelData[0].compare(L"1") == 0);
-    m_value1cp = (ConversionParameter)_wtoi(viewModelData[1].c_str());
-    m_Value1Active = (viewModelData[2].compare(L"1") == 0);
-    m_Value2Active = (viewModelData[3].compare(L"1") == 0);
-    m_Value1 = ref new String(viewModelData[4].c_str());
-    m_Value2 = ref new String(viewModelData[5].c_str());
-    m_valueFromUnlocalized = viewModelData[6];
-    m_valueToUnlocalized = viewModelData[7];
-    wstringstream modelData(wstringstream::out);
-    for (unsigned int i = 1; i < tokens.size(); i++)
-    {
-        modelData << tokens[i] << L"[###]";
-    }
-    m_model->DeSerialize(modelData.str());
-    InitializeView();
-    RaisePropertyChanged(nullptr);  // Update since all props have been updated.
-}
-
 // Saving User Preferences of Category and Associated-Units across Sessions.
 void UnitConverterViewModel::SaveUserPreferences()
 {
     if (UnitsAreValid())
     {
-        ApplicationDataContainer^ localSettings = ApplicationData::Current->LocalSettings;
+        ApplicationDataContainer ^ localSettings = ApplicationData::Current->LocalSettings;
         if (!m_IsCurrencyCurrentCategory)
         {
             auto userPreferences = m_model->SaveUserPreferences();
@@ -693,10 +653,10 @@ void UnitConverterViewModel::RestoreUserPreferences()
 {
     if (!IsCurrencyCurrentCategory)
     {
-        ApplicationDataContainer^ localSettings = ApplicationData::Current->LocalSettings;
+        ApplicationDataContainer ^ localSettings = ApplicationData::Current->LocalSettings;
         if (localSettings->Values->HasKey(ref new String(L"UnitConverterPreferences")))
         {
-            String^ userPreferences = safe_cast<String^>(localSettings->Values->Lookup(ref new String(L"UnitConverterPreferences")));
+            String ^ userPreferences = safe_cast<String ^>(localSettings->Values->Lookup(ref new String(L"UnitConverterPreferences")));
             m_model->RestoreUserPreferences(userPreferences->Data());
         }
     }
@@ -706,10 +666,12 @@ void UnitConverterViewModel::OnCurrencyDataLoadFinished(bool didLoad)
 {
     m_isCurrencyDataLoaded = true;
     CurrencyDataLoadFailed = !didLoad;
-    ResetView();
+    m_model->ResetCategoriesAndRatios();
+    m_model->Calculate();
+    ResetCategory();
 
     StringReference key = didLoad ? UnitConverterResourceKeys::CurrencyRatesUpdated : UnitConverterResourceKeys::CurrencyRatesUpdateFailed;
-    String^ announcement = AppResourceProvider::GetInstance().GetResourceString(key);
+    String ^ announcement = AppResourceProvider::GetInstance()->GetResourceString(key);
     Announcement = CalculatorAnnouncement::GetUpdateCurrencyRatesAnnouncement(announcement);
 }
 
@@ -724,18 +686,20 @@ void UnitConverterViewModel::RefreshCurrencyRatios()
     m_isCurrencyDataLoaded = false;
     IsCurrencyLoadingVisible = true;
 
-    String^ announcement = AppResourceProvider::GetInstance().GetResourceString(UnitConverterResourceKeys::UpdatingCurrencyRates);
+    String ^ announcement = AppResourceProvider::GetInstance()->GetResourceString(UnitConverterResourceKeys::UpdatingCurrencyRates);
     Announcement = CalculatorAnnouncement::GetUpdateCurrencyRatesAnnouncement(announcement);
 
-    auto refreshTask = create_task(m_model->RefreshCurrencyRatios());
-    refreshTask.then([this](const pair<bool, wstring>& refreshResult)
-    {
-        bool didLoad = refreshResult.first;
-        wstring timestamp = refreshResult.second;
+    auto that(this);
+    auto refreshTask = create_task([that] { return that->m_model->RefreshCurrencyRatios().get(); });
+    refreshTask.then(
+        [that](const pair<bool, wstring>& refreshResult) {
+            bool didLoad = refreshResult.first;
+            wstring timestamp = refreshResult.second;
 
-        OnCurrencyTimestampUpdated(timestamp, false /*isWeekOldData*/);
-        OnCurrencyDataLoadFinished(didLoad);
-    }, task_continuation_context::use_current());
+            that->OnCurrencyTimestampUpdated(timestamp, false /*isWeekOldData*/);
+            that->OnCurrencyDataLoadFinished(didLoad);
+        },
+        task_continuation_context::use_current());
 }
 
 void UnitConverterViewModel::OnNetworkBehaviorChanged(_In_ NetworkAccessBehavior newBehavior)
@@ -800,12 +764,12 @@ UnitConversionManager::Command UnitConverterViewModel::CommandFromButtonId(Numbe
     return command;
 }
 
-void UnitConverterViewModel::SupplementaryResultsTimerTick(ThreadPoolTimer^ timer)
+void UnitConverterViewModel::SupplementaryResultsTimerTick(ThreadPoolTimer ^ timer)
 {
     timer->Cancel();
 }
 
-void UnitConverterViewModel::SupplementaryResultsTimerCancel(ThreadPoolTimer^ timer)
+void UnitConverterViewModel::SupplementaryResultsTimerCancel(ThreadPoolTimer ^ timer)
 {
     if (!m_resettingTimer)
     {
@@ -818,14 +782,12 @@ void UnitConverterViewModel::RefreshSupplementaryResults()
     m_cacheMutex.lock();
     m_SupplementaryResults->Clear();
 
-    vector<SupplementaryResult^> whimsicals;
+    vector<SupplementaryResult ^> whimsicals;
 
     for (tuple<wstring, UCM::Unit> suggestedValue : m_cachedSuggestedValues)
     {
-        SupplementaryResult^ result =
-            ref new SupplementaryResult(
-            this->ConvertToLocalizedString(get<0>(suggestedValue), false),
-            ref new Unit(get<1>(suggestedValue)));
+        SupplementaryResult ^ result = ref new SupplementaryResult(
+            this->ConvertToLocalizedString(get<0>(suggestedValue), false, CurrencyFormatterParameter::Default), ref new Unit(get<1>(suggestedValue)));
         if (result->IsWhimsical())
         {
             whimsicals.push_back(result);
@@ -843,7 +805,7 @@ void UnitConverterViewModel::RefreshSupplementaryResults()
 
     m_cacheMutex.unlock();
     RaisePropertyChanged(SupplementaryResultsPropertyName);
-    //EventWriteConverterSupplementaryResultsUpdated();
+    // EventWriteConverterSupplementaryResultsUpdated();
 }
 
 // When UpdateDisplay is called, the ViewModel will remember the From/To unlocalized display values
@@ -852,16 +814,13 @@ void UnitConverterViewModel::RefreshSupplementaryResults()
 // values are not both zero.
 void UnitConverterViewModel::AnnounceConversionResult()
 {
-    if ((m_valueFromUnlocalized != m_lastAnnouncedFrom
-        || m_valueToUnlocalized != m_lastAnnouncedTo)
-        && Unit1 != nullptr
-        && Unit2 != nullptr)
+    if ((m_valueFromUnlocalized != m_lastAnnouncedFrom || m_valueToUnlocalized != m_lastAnnouncedTo) && Unit1 != nullptr && Unit2 != nullptr)
     {
         m_lastAnnouncedFrom = m_valueFromUnlocalized;
         m_lastAnnouncedTo = m_valueToUnlocalized;
 
-        Unit^ unitFrom = Value1Active ? Unit1 : Unit2;
-        Unit^ unitTo = (unitFrom == Unit1) ? Unit2 : Unit1;
+        Unit ^ unitFrom = Value1Active ? Unit1 : Unit2;
+        Unit ^ unitTo = (unitFrom == Unit1) ? Unit2 : Unit1;
         m_lastAnnouncedConversionResult = GetLocalizedConversionResultStringFormat(ValueFrom, unitFrom->Name, ValueTo, unitTo->Name);
 
         Announcement = CalculatorAnnouncement::GetDisplayUpdatedAnnouncement(m_lastAnnouncedConversionResult);
@@ -872,16 +831,50 @@ void UnitConverterViewModel::UpdateInputBlocked(_In_ const wstring& currencyInpu
 {
     // currencyInput is in en-US and has the default decimal separator, so this is safe to do.
     auto posOfDecimal = currencyInput.find(L'.');
-    m_isInputBlocked  = false;
+    m_isInputBlocked = false;
     if (posOfDecimal != wstring::npos && IsCurrencyCurrentCategory)
     {
-        m_isInputBlocked = (posOfDecimal + static_cast<size_t>(m_currencyMaxFractionDigits) + 1 == currencyInput.length());
+        m_isInputBlocked = (posOfDecimal + static_cast<size_t>(CurrencyFormatterFrom->FractionDigits) + 1 == currencyInput.length());
     }
 }
 
-NumbersAndOperatorsEnum UnitConverterViewModel::MapCharacterToButtonId(
-    const wchar_t ch,
-    bool& canSendNegate)
+std::wstring TruncateFractionDigits(const std::wstring& n, int digitCount)
+{
+    auto i = n.find('.');
+    if (i == std::wstring::npos)
+        return n;
+    size_t actualDigitCount = n.size() - i - 1;
+    return n.substr(0, n.size() - (actualDigitCount - digitCount));
+}
+
+void UnitConverterViewModel::UpdateCurrencyFormatter()
+{
+    if (!IsCurrencyCurrentCategory || m_Unit1->Abbreviation->IsEmpty() || m_Unit2->Abbreviation->IsEmpty())
+        return;
+
+    m_currencyFormatter1 = ref new CurrencyFormatter(m_Unit1->Abbreviation);
+    m_currencyFormatter1->IsGrouped = true;
+    m_currencyFormatter1->Mode = CurrencyFormatterMode::UseCurrencyCode;
+    m_currencyFormatter1->ApplyRoundingForCurrency(RoundingAlgorithm::RoundHalfDown);
+
+    m_currencyFormatter2 = ref new CurrencyFormatter(m_Unit2->Abbreviation);
+    m_currencyFormatter2->IsGrouped = true;
+    m_currencyFormatter2->Mode = CurrencyFormatterMode::UseCurrencyCode;
+    m_currencyFormatter2->ApplyRoundingForCurrency(RoundingAlgorithm::RoundHalfDown);
+
+    UpdateIsDecimalEnabled();
+
+    OnPaste(ref new String(TruncateFractionDigits(m_valueFromUnlocalized, CurrencyFormatterFrom->FractionDigits).data()));
+}
+
+void UnitConverterViewModel::UpdateIsDecimalEnabled()
+{
+    if (!IsCurrencyCurrentCategory || CurrencyFormatterFrom == nullptr)
+        return;
+    IsDecimalEnabled = CurrencyFormatterFrom->FractionDigits > 0;
+}
+
+NumbersAndOperatorsEnum UnitConverterViewModel::MapCharacterToButtonId(const wchar_t ch, bool& canSendNegate)
 {
     static_assert(NumbersAndOperatorsEnum::Zero < NumbersAndOperatorsEnum::One, "NumbersAndOperatorsEnum order is invalid");
     static_assert(NumbersAndOperatorsEnum::One < NumbersAndOperatorsEnum::Two, "NumbersAndOperatorsEnum order is invalid");
@@ -931,7 +924,8 @@ NumbersAndOperatorsEnum UnitConverterViewModel::MapCharacterToButtonId(
     {
         if (LocalizationSettings::GetInstance().IsLocalizedDigit(ch))
         {
-            mappedValue = NumbersAndOperatorsEnum::Zero + static_cast<NumbersAndOperatorsEnum>(ch - LocalizationSettings::GetInstance().GetDigitSymbolFromEnUsDigit(L'0'));
+            mappedValue = NumbersAndOperatorsEnum::Zero
+                          + static_cast<NumbersAndOperatorsEnum>(ch - LocalizationSettings::GetInstance().GetDigitSymbolFromEnUsDigit(L'0'));
             canSendNegate = true;
         }
     }
@@ -939,25 +933,25 @@ NumbersAndOperatorsEnum UnitConverterViewModel::MapCharacterToButtonId(
     return mappedValue;
 }
 
-void UnitConverterViewModel::OnPaste(String^ stringToPaste, ViewMode mode)
+void UnitConverterViewModel::OnPaste(String ^ stringToPaste)
 {
     // If pastedString is invalid("NoOp") then display pasteError else process the string
-    if (stringToPaste == StringReference(CopyPasteManager::PasteErrorString))
+    if (CopyPasteManager::IsErrorMessage(stringToPaste))
     {
         this->DisplayPasteError();
         return;
     }
 
-    TraceLogger::GetInstance().LogValidInputPasted(mode);
+    TraceLogger::GetInstance()->LogInputPasted(Mode);
     bool isFirstLegalChar = true;
     bool sendNegate = false;
-    wstring accumulation = L"";
+    wstring accumulation;
 
-    for (auto it = stringToPaste->Begin(); it != stringToPaste->End(); it++)
+    for (const auto ch : stringToPaste)
     {
         bool canSendNegate = false;
 
-        NumbersAndOperatorsEnum op = MapCharacterToButtonId(*it, canSendNegate);
+        NumbersAndOperatorsEnum op = MapCharacterToButtonId(ch, canSendNegate);
 
         if (NumbersAndOperatorsEnum::None != op)
         {
@@ -993,7 +987,7 @@ void UnitConverterViewModel::OnPaste(String^ stringToPaste, ViewMode mode)
                 }
             }
 
-            accumulation += *it;
+            accumulation += ch;
             UpdateInputBlocked(accumulation);
             if (m_isInputBlocked)
             {
@@ -1007,32 +1001,40 @@ void UnitConverterViewModel::OnPaste(String^ stringToPaste, ViewMode mode)
     }
 }
 
-String^ UnitConverterViewModel::GetLocalizedAutomationName(_In_ String^ displayvalue, _In_ String^ unitname, _In_ String^ format)
+String
+    ^ UnitConverterViewModel::GetLocalizedAutomationName(
+        _In_ String ^ displayvalue,
+        _In_ String ^ unitname,
+        _In_ String ^ format,
+        _In_ CurrencyFormatterParameter cfp)
 {
-    String^ valueToLocalize = displayvalue;
+    String ^ valueToLocalize = displayvalue;
     if (displayvalue == ValueFrom && Utils::IsLastCharacterTarget(m_valueFromUnlocalized, m_decimalSeparator))
     {
         // Need to compute a second localized value for the automation
         // name that does not include the decimal separator.
-        displayvalue = ConvertToLocalizedString(m_valueFromUnlocalized, false /*allowTrailingDecimal*/);
+        displayvalue = ConvertToLocalizedString(m_valueFromUnlocalized, false /*allowTrailingDecimal*/, cfp);
         format = m_localizedValueFromDecimalFormat;
     }
 
-    wstring localizedResult = LocalizationStringUtil::GetLocalizedString(format->Data(), displayvalue->Data(), unitname->Data());
-    return ref new String(localizedResult.c_str());
+    return LocalizationStringUtil::GetLocalizedString(format, displayvalue, unitname);
 }
 
-String^ UnitConverterViewModel::GetLocalizedConversionResultStringFormat(_In_ String^ fromValue, _In_ String^ fromUnit, _In_ String^ toValue, _In_ String^ toUnit)
+String
+    ^ UnitConverterViewModel::GetLocalizedConversionResultStringFormat(
+        _In_ String ^ fromValue,
+        _In_ String ^ fromUnit,
+        _In_ String ^ toValue,
+        _In_ String ^ toUnit)
 {
-    String^ localizedString = ref new String(LocalizationStringUtil::GetLocalizedString(m_localizedConversionResultFormat->Data(), fromValue->Data(), fromUnit->Data(), toValue->Data(), toUnit->Data()).c_str());
-    return localizedString;
+    return LocalizationStringUtil::GetLocalizedString(m_localizedConversionResultFormat, fromValue, fromUnit, toValue, toUnit);
 }
 
 void UnitConverterViewModel::UpdateValue1AutomationName()
 {
     if (Unit1)
     {
-        Value1AutomationName = GetLocalizedAutomationName(Value1, Unit1->AccessibleName, m_localizedValueFromFormat);
+        Value1AutomationName = GetLocalizedAutomationName(Value1, Unit1->AccessibleName, m_localizedValueFromFormat, CurrencyFormatterParameter::ForValue1);
     }
 }
 
@@ -1040,15 +1042,15 @@ void UnitConverterViewModel::UpdateValue2AutomationName()
 {
     if (Unit2)
     {
-        Value2AutomationName = GetLocalizedAutomationName(Value2, Unit2->AccessibleName, m_localizedValueToFormat);
+        Value2AutomationName = GetLocalizedAutomationName(Value2, Unit2->AccessibleName, m_localizedValueToFormat, CurrencyFormatterParameter::ForValue1);
     }
 }
 
 void UnitConverterViewModel::OnMaxDigitsReached()
 {
-    String^ format = AppResourceProvider::GetInstance().GetResourceString(UnitConverterResourceKeys::MaxDigitsReachedFormat);
-    const wstring& announcement = LocalizationStringUtil::GetLocalizedString(format->Data(), m_lastAnnouncedConversionResult->Data());
-    Announcement = CalculatorAnnouncement::GetMaxDigitsReachedAnnouncement(StringReference(announcement.c_str()));
+    String ^ format = AppResourceProvider::GetInstance()->GetResourceString(UnitConverterResourceKeys::MaxDigitsReachedFormat);
+    auto announcement = LocalizationStringUtil::GetLocalizedString(format, m_lastAnnouncedConversionResult);
+    Announcement = CalculatorAnnouncement::GetMaxDigitsReachedAnnouncement(announcement);
 }
 
 bool UnitConverterViewModel::UnitsAreValid()
@@ -1056,29 +1058,8 @@ bool UnitConverterViewModel::UnitsAreValid()
     return UnitFrom != nullptr && !UnitFrom->Abbreviation->IsEmpty() && UnitTo != nullptr && !UnitTo->Abbreviation->IsEmpty();
 }
 
-void UnitConverterViewModel::StartConversionResultTimer()
+String ^ SupplementaryResult::GetLocalizedAutomationName()
 {
-    m_conversionResultTaskHelper = make_unique<ConversionResultTaskHelper>(
-        CONVERSION_FINALIZED_DELAY_IN_MS, [this]()
-    {
-        if (UnitsAreValid())
-        {
-            String^ valueFrom = m_Value1Active ? m_Value1 : m_Value2;
-            String^ valueTo = m_Value1Active ? m_Value2 : m_Value1;
-            TraceLogger::GetInstance().LogConversionResult(
-                valueFrom->Data(),
-                UnitFrom->ToString()->Data(),
-                valueTo->Data(),
-                UnitTo->ToString()->Data());
-        }
-    });
-}
-
-String^ SupplementaryResult::GetLocalizedAutomationName()
-{
-    auto format = AppResourceProvider::GetInstance().GetResourceString("SupplementaryUnit_AutomationName");
-    return ref new String(LocalizationStringUtil::GetLocalizedString(
-        format->Data(),
-        this->Value->Data(),
-        this->Unit->Name->Data()).c_str());
+    auto format = AppResourceProvider::GetInstance()->GetResourceString("SupplementaryUnit_AutomationName");
+    return LocalizationStringUtil::GetLocalizedString(format, this->Value, this->Unit->Name);
 }
